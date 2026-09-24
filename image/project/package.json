@@ -1,0 +1,32 @@
+{
+  "name": "medusa-stack",
+  "private": true,
+  "description": "Medusa project of the Docker stack: the Medusa server and admin with SMTP emails and a setup script. @medusajs/* versions are set by image/Dockerfile (MEDUSA_VERSION).",
+  "license": "MIT",
+  "scripts": {
+    "build": "medusa build",
+    "start": "medusa start"
+  },
+  "dependencies": {
+    "@medusajs/admin-sdk": "MEDUSA_VERSION",
+    "@medusajs/cli": "MEDUSA_VERSION",
+    "@medusajs/framework": "MEDUSA_VERSION",
+    "@medusajs/medusa": "MEDUSA_VERSION",
+    "nodemailer": "^7.0.0"
+  },
+  "devDependencies": {
+    "@swc/core": "^1.7.28",
+    "@types/node": "^24.0.0",
+    "@types/nodemailer": "^7.0.0",
+    "@types/react": "^18.3.2",
+    "@types/react-dom": "^18.2.25",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.2",
+    "vite": "^5.4.14"
+  },
+  "engines": {
+    "node": ">=22.12"
+  }
+}

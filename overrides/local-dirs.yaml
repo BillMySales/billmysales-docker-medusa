@@ -1,0 +1,43 @@
+# Keep the stack's data in local directories instead of named volumes, so it
+# is visible from the host (and easy to include in host-level backups).
+#
+# In .env:
+#   COMPOSE_FILE=compose.yaml:overrides/local-dirs.yaml
+#   DATA_DIR=./data        # optional, default ./data (relative to compose.yaml)
+#
+# Only the directories you keep here change; delete the lines you don't need
+# (e.g. keep just `static` and `backups`). Existing data in the named volumes
+# is NOT moved: switch before the first `up`, or restore a backup afterwards.
+# On Linux, the Medusa containers run as UID 1000 (node): create the uploads
+# directory first: mkdir -p data/static && sudo chown 1000:1000 data/static
+# On macOS any directory works (Docker Desktop maps owners).
+# Backup files are root-owned with mode 0600.
+
+x-static: &static
+  - ${DATA_DIR:-./data}/static:/app/static
+
+services:
+  db:
+    volumes:
+      - ${DATA_DIR:-./data}/db:/var/lib/postgresql
+  redis:
+    volumes:
+      - ${DATA_DIR:-./data}/redis:/data
+  setup:
+    volumes:
+      - ${DATA_DIR:-./data}/static:/app/static
+      - ./scripts:/usr/local/share/stack/scripts:ro
+  medusa:
+    volumes: *static
+  worker:
+    volumes: *static
+  caddy:
+    volumes:
+      - ./config/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${DATA_DIR:-./data}/caddy/data:/data
+      - ${DATA_DIR:-./data}/caddy/config:/config
+  backup:
+    volumes:
+      - ${DATA_DIR:-./data}/static:/static
+      - ${DATA_DIR:-./data}/backups:/backups
+      - ./scripts/backup.sh:/usr/local/bin/backup.sh:ro
