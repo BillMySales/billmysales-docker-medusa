@@ -180,13 +180,17 @@ start and then every `BACKUP_INTERVAL_HOURS`, and deletes files older than
 `BACKUP_KEEP_DAYS`. Files are readable by their owner only.
 
 ```shell
-docker compose run --rm backup now                  # back up now
-docker compose run --rm backup list                 # list timestamps
+docker compose run --rm --no-deps backup now                  # back up now
+docker compose run --rm --no-deps backup list                 # list timestamps
 docker compose stop medusa worker                   # stop the app first
-docker compose run --rm backup restore <timestamp>  # database and uploads
+docker compose run --rm --no-deps backup restore <timestamp>  # database and uploads
 docker compose exec redis redis-cli FLUSHALL        # cache and queues of the old data
 docker compose up -d
 ```
+
+`--no-deps` keeps the command from starting `setup` first (with damaged
+data `setup` fails and the restore would never run); the database must
+be running (`docker compose up -d db` if the stack is down).
 
 A restore replaces the database with a fresh copy, so nothing created after
 the backup remains.
