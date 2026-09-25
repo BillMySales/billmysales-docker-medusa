@@ -18,7 +18,9 @@ Medusa is distributed as npm packages to build a project with, not as an
 image: `image/project` is a minimal Medusa project (configuration from the
 environment, an SMTP email provider, emails in Spanish and a setup script),
 built by `image/Dockerfile` (`medusa build`, about 3 minutes; its base
-images exist for amd64 and arm64, tested on arm64).
+images exist for amd64 and arm64, tested on arm64). It's not Medusa's
+starter repository, which lags behind Medusa's releases. PostgreSQL 18
+because Medusa's CI tests with the unpinned `postgres` image (the latest).
 
 **There is no shop front for customers**: Medusa is headless, this stack
 gives the admin and the APIs, and the public shop (catalog, cart, checkout
@@ -86,8 +88,10 @@ Services
 | `mailpit` | `mailpit` | Development SMTP server that catches all mail.                 |
 
 `medusa` and `worker` run the same image in Medusa's `server` and `worker`
-modes. The admin calls the API on its own address, so the image doesn't
-depend on the site's URL: changing `MEDUSA_URL` only needs `up -d`.
+modes. The admin calls the API on its own address (`/`, since
+`MEDUSA_BACKEND_URL` isn't set at build), so the image doesn't depend on the
+site's URL: changing `MEDUSA_URL` only needs `up -d` (setting
+`MEDUSA_BACKEND_URL` would need a rebuild for each change).
 
 ### What `setup` does
 
@@ -217,6 +221,12 @@ admin extensions go there, then `docker compose up -d --build`. A BillMySales
 integration would be a Medusa plugin (a subscriber of `order.placed` and
 friends) added this way.
 
+- `medusa build` fails on TypeScript errors, so the image build stops on
+  them.
+- `@swc/core` (a dev dependency) is required: it loads `medusa-config.ts`.
+- npm 11 warns during the build about install scripts not in
+  `allowScripts`: harmless.
+
 Overrides
 ---------
 
@@ -310,6 +320,14 @@ What was checked for this stack (2026-09-24):
   directories.
 - Not tested: issuing a real Let's Encrypt certificate (needs a public
   domain), a storefront, SMTPS/STARTTLS with a real provider.
+
+Testing
+-------
+
+- Admin password reset through the API: `POST
+  /auth/user/emailpass/reset-password` with `{"identifier": "<email>"}`
+  emails a token; then `POST /auth/user/emailpass/update` with the token as
+  `Authorization: Bearer <token>` and `{"password": "..."}`.
 
 Resource usage
 --------------
