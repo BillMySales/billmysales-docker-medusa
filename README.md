@@ -57,9 +57,9 @@ Production
 
 ```shell
 cp .env.prod.example .env
-# Fill in MEDUSA_URL, SITE_ADDRESS, DB_PASSWORD, MEDUSA_JWT_SECRET,
-# MEDUSA_COOKIE_SECRET, MEDUSA_ADMIN_EMAIL, MEDUSA_ADMIN_PASSWORD and the
-# SMTP_* values.
+# Required: MEDUSA_URL, SITE_ADDRESS, DB_PASSWORD, MEDUSA_JWT_SECRET,
+# MEDUSA_COOKIE_SECRET, MEDUSA_ADMIN_EMAIL, MEDUSA_ADMIN_PASSWORD.
+# Recommended: the SMTP_* values.
 docker compose up -d --build
 ```
 
@@ -67,6 +67,8 @@ docker compose up -d --build
   and renews it automatically (certificates live in the `caddy_data` volume).
 - Behind another TLS-terminating proxy, use `SITE_ADDRESS=:80`.
 - Compose refuses to start while a required value is missing.
+- Configure SMTP (recommended, not required): without `SMTP_HOST` Medusa
+  sends no emails (admin invitations, password resets, order confirmations).
 - The `backup` profile is enabled by default in the production template.
 - Behind an existing Traefik (no host ports), use `overrides/traefik.yaml`
   (see [Overrides](#overrides)).
@@ -97,8 +99,11 @@ site's URL: changing `MEDUSA_URL` only needs `up -d` (setting
 
 - `medusa db:migrate`: pending migrations of Medusa's modules, module links
   and search indexes, without prompts (see [Upgrades](#upgrades)).
-- The admin user (`MEDUSA_ADMIN_EMAIL`, `MEDUSA_ADMIN_PASSWORD`), if missing.
-- Once (then kept as edited in the admin): store name, currency
+- The admin user (`MEDUSA_ADMIN_EMAIL`, `MEDUSA_ADMIN_PASSWORD`), if no user
+  with that email exists: changing the email later adds another admin, and
+  the password is only set then.
+- Once (then kept as edited in the admin): store name (the emails read
+  `MEDUSA_STORE_NAME` on every start, see [Emails](#emails)), currency
   (`MEDUSA_CURRENCY`, CLP), a region for the country (`MEDUSA_COUNTRY`,
   Chile) with its tax rate (`MEDUSA_TAX_RATE`, IVA 19%), prices including tax,
   a stock location with a free "Despacho" shipping option (so checkout
@@ -133,8 +138,12 @@ Spanish texts (`image/project/src/subscribers`, layout in
 | `auth.password_reset` (customer)   | Link to `MEDUSA_STOREFRONT_URL/reset-password` (only if set). |
 | `order.placed`                     | Order confirmation: items and total (`$19.980`).    |
 
-SMTP comes from `SMTP_*` (`SMTP_SECURE`: `tls` = STARTTLS required, `ssl` =
-SMTPS, `none`); without `SMTP_HOST` no email is sent. The worker sends them.
+SMTP comes from `SMTP_*` (`SMTP_SECURE`: `tls`, the default = STARTTLS
+required, `ssl` = SMTPS, `none`); without `SMTP_HOST` no email is sent. The
+worker sends them. On every start, the emails take the store name for their
+header and subjects from `MEDUSA_STORE_NAME` (the store's own name in the
+admin is only set on the first install) and format amounts with
+`MEDUSA_LOCALE` (`es-CL`: `$19.980`).
 
 Storefronts
 -----------
@@ -262,7 +271,8 @@ Every variable is documented in `.env.prod.example`. Main groups:
 - **Versions**: `MEDUSA_VERSION`, `NODE_VERSION`, `POSTGRES_VERSION`,
   `REDIS_VERSION`, `CADDY_VERSION`, ...
 - **Mail**: `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`,
-  `SMTP_PASSWORD`, `SMTP_FROM`.
+  `SMTP_PASSWORD`, `SMTP_FROM`, `MEDUSA_LOCALE` (amounts in the emails;
+  `MEDUSA_STORE_NAME` is also read by the emails on every start).
 - **Resources and logs**: `*_MEMORY_LIMIT` per service, `UPLOAD_MAX_SIZE`,
   `LOG_MAX_SIZE`, `LOG_MAX_FILE`.
 
