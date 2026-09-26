@@ -50,6 +50,13 @@ x-medusa-env: &medusa-env
   SMTP_PASSWORD: ${SMTP_PASSWORD:-}
   SMTP_FROM: ${SMTP_FROM:-}
 
+# Lets Medusa reach services on the host (e.g. an app running locally)
+# at http://host.docker.internal:<port>, also on Linux.
+# Every container that runs the platform's code: its web process, setup,
+# cron, workers, the console (Docker Desktop resolves it anyway).
+x-host-access: &host-access
+  - "host.docker.internal:host-gateway"
+
 services:
   db:
     image: postgres:${POSTGRES_VERSION:-18}-alpine
@@ -115,6 +122,7 @@ services:
       MEDUSA_STOCK_LOCATION: ${MEDUSA_STOCK_LOCATION:-Bodega}
       MEDUSA_CITY: ${MEDUSA_CITY:-Santiago}
       MEDUSA_MIGRATE_UNSAFE: ${MEDUSA_MIGRATE_UNSAFE:-}
+    extra_hosts: *host-access
     volumes:
       - static:/app/static
       - ./scripts:/usr/local/share/stack/scripts:ro
@@ -134,10 +142,7 @@ services:
     environment:
       <<: *medusa-env
       MEDUSA_WORKER_MODE: server
-    # Lets Medusa reach services on the host (e.g. an app running locally)
-    # at http://host.docker.internal:<port>, also on Linux.
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    extra_hosts: *host-access
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:9000/health"]
       interval: 10s
@@ -160,8 +165,7 @@ services:
       <<: *medusa-env
       MEDUSA_WORKER_MODE: worker
       DISABLE_MEDUSA_ADMIN: "true"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    extra_hosts: *host-access
     healthcheck:
       test: ["CMD-SHELL", "grep -q medusa /proc/1/cmdline"]
       interval: 30s
